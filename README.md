@@ -1,70 +1,100 @@
-# Getting Started with Create React App
+# Classroom Website - Product Requirements Document (PRD)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 1. Project Overview
 
-## Available Scripts
+A React-based classroom website with Firebase backend for managing and displaying content including news and announcements. The website includes public-facing pages and an admin panel for content management.
 
-In the project directory, you can run:
+## 2. Core Features
 
-### `npm start`
+### Public Pages:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Home Page:** Display latest news and announcements
+- **About Us:** Information about the classroom/institution
+- **Contact:** Contact form and information
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Admin Panel:
 
-### `npm test`
+- Secure authentication system
+- CRUD operations for news and announcements
+- Content management dashboard
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 3. Technical Specifications
 
-### `npm run build`
+### Frontend:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- React with component-based architecture
+- Tailwind CSS for styling and responsive design
+- Framer Motion for UI animations and transitions
+- Responsive design for all devices
+- React Router for navigation
+- Context API for state management
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Backend:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Firebase Authentication for admin login
+- Firestore Database for content storage
+- Firebase Storage for media files
 
-### `npm run eject`
+## 4. Data Schema
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+**News Collection:**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- id: string
+- title: string
+- content: string
+- image: string (URL)
+- publishDate: timestamp
+- isPublished: boolean
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+**Announcements Collection:**
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- id: string
+- title: string
+- content: string
+- importance: string (High/Medium/Low)
+- publishDate: timestamp
+- expiryDate: timestamp
+- isPublished: boolean
 
-## Learn More
+## 5. User Flows
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Public User:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+1. Browse home page to view news/announcements
+2. Navigate to About Us/Contact pages
+3. Fill out and submit contact form
 
-### Code Splitting
+### Admin User:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. Login to admin panel
+2. View dashboard of content statistics
+3. Create/Read/Update/Delete news and announcements
+4. Publish or unpublish content
+5. Logout
 
-### Analyzing the Bundle Size
+## 6. Implementation Phases
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+**Phase 1:**
 
-### Making a Progressive Web App
+- Project setup with React and Firebase
+- Basic page structure and navigation
+- Firebase authentication for admin
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+**Phase 2:**
 
-### Advanced Configuration
+- Admin panel CRUD functionality
+- Database integration for content
+- Content display on public pages
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+**Phase 3:**
 
-### Deployment
+- Responsive design refinement
+- Contact form functionality
+- Final testing and deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 7. Success Metrics
 
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Successful admin content management
+- Fast page load times (<2s)
+- Responsive design across devices
+- Secure admin authentication
