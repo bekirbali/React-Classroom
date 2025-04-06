@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useParams,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Navbar from "./components/layout/Navbar";
@@ -22,6 +23,11 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" />;
   }
   return children;
+};
+
+const ContentFormWrapper = ({ type }) => {
+  const { id } = useParams();
+  return <ContentForm type={type} id={id} />;
 };
 
 const App = () => {
@@ -60,7 +66,7 @@ const App = () => {
                 path="/admin/news/edit/:id"
                 element={
                   <ProtectedRoute>
-                    <ContentForm type="news" />
+                    <ContentFormWrapper type="news" />
                   </ProtectedRoute>
                 }
               />
@@ -76,7 +82,7 @@ const App = () => {
                 path="/admin/announcements/edit/:id"
                 element={
                   <ProtectedRoute>
-                    <ContentForm type="announcements" />
+                    <ContentFormWrapper type="announcements" />
                   </ProtectedRoute>
                 }
               />
