@@ -295,7 +295,7 @@ const Home = () => {
             {news.map((item) => (
               <motion.div
                 key={item.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
@@ -310,14 +310,14 @@ const Home = () => {
                     }}
                   />
                 </div>
-                <div className="p-6">
+                <div className="p-6 flex flex-col flex-grow">
                   <h3 className="text-xl font-semibold mb-2 break-words">
                     {item.title}
                   </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-3 break-words">
+                  <p className="text-gray-600 mb-4 line-clamp-3 break-words flex-grow">
                     {item.content}
                   </p>
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mt-auto">
                     <div className="text-sm text-gray-500">
                       {new Date(
                         item.publishDate.seconds * 1000
