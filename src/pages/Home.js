@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -41,6 +41,7 @@ const Home = () => {
   const [news, setNews] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedNews, setSelectedNews] = useState(null);
   const [countdown, setCountdown] = useState({
     days: 0,
     hours: 0,
@@ -310,12 +311,24 @@ const Home = () => {
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                  <p className="text-gray-600 mb-4">{item.content}</p>
-                  <div className="text-sm text-gray-500">
-                    {new Date(
-                      item.publishDate.seconds * 1000
-                    ).toLocaleDateString()}
+                  <h3 className="text-xl font-semibold mb-2 break-words">
+                    {item.title}
+                  </h3>
+                  <p className="text-gray-600 mb-4 line-clamp-3 break-words">
+                    {item.content}
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-gray-500">
+                      {new Date(
+                        item.publishDate.seconds * 1000
+                      ).toLocaleDateString()}
+                    </div>
+                    <button
+                      onClick={() => setSelectedNews(item)}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Read More
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -323,6 +336,68 @@ const Home = () => {
           </div>
         </section>
       </div>
+
+      {/* News Modal */}
+      <AnimatePresence>
+        {selectedNews && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setSelectedNews(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative">
+                <img
+                  src={selectedNews.imageUrl || DEFAULT_NEWS_IMAGE}
+                  alt={selectedNews.title}
+                  className="w-full h-64 object-cover rounded-t-lg"
+                />
+                <button
+                  onClick={() => setSelectedNews(null)}
+                  className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4 break-words">
+                  {selectedNews.title}
+                </h2>
+                <p className="text-gray-600 whitespace-normal break-words">
+                  {selectedNews.content}
+                </p>
+                <div className="mt-4 text-sm text-gray-500">
+                  Published:{" "}
+                  {new Date(
+                    selectedNews.publishDate.seconds * 1000
+                  ).toLocaleDateString()}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
