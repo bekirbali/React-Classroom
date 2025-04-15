@@ -15,6 +15,47 @@ const sliderStyles = `
   .slider-container .slick-dots {
     bottom: 0;
   }
+  .news-slider {
+    position: relative;
+    padding: 0 50px 30px;
+  }
+  .news-slider .slick-prev, 
+  .news-slider .slick-next {
+    z-index: 10;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .news-slider .slick-prev {
+    left: -20px;
+  }
+  .news-slider .slick-next {
+    right: -20px;
+  }
+  .news-slider .slick-prev:before,
+  .news-slider .slick-next:before {
+    font-size: 30px;
+    opacity: 0.8;
+    color: #3B82F6;
+  }
+  .news-slider .slick-track {
+    display: flex;
+    padding: 10px 0;
+  }
+  .news-slider .slick-track .slick-slide {
+    height: inherit;
+    display: flex;
+  }
+  .news-slider .slick-track .slick-slide > div {
+    width: 100%;
+    height: 100%;
+    display: flex;
+  }
+  .news-slider .slick-dots {
+    bottom: -10px;
+  }
 `;
 
 // Add placeholder image URL
@@ -289,50 +330,81 @@ const Home = () => {
         </section>
 
         {/* News Section */}
-        <section>
+        <section className="mb-16">
           <h2 className="text-2xl font-semibold mb-4">Latest News</h2>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {news.map((item) => (
-              <motion.div
-                key={item.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="relative h-48">
-                  <img
-                    src={item.imageUrl || DEFAULT_NEWS_IMAGE}
-                    alt={item.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = DEFAULT_NEWS_IMAGE;
-                    }}
-                  />
-                </div>
-                <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="text-xl font-semibold mb-2 break-words">
-                    {item.title}
-                  </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-3 break-words flex-grow">
-                    {item.content}
-                  </p>
-                  <div className="flex justify-between items-center mt-auto">
-                    <div className="text-sm text-gray-500">
-                      {new Date(
-                        item.publishDate.seconds * 1000
-                      ).toLocaleDateString()}
+          <div className="relative px-8">
+            <Slider
+              {...{
+                dots: true,
+                infinite: true,
+                speed: 500,
+                slidesToShow: 3,
+                slidesToScroll: 1,
+                autoplay: true,
+                autoplaySpeed: 6000,
+                arrows: true,
+                className: "news-slider",
+                responsive: [
+                  {
+                    breakpoint: 1024,
+                    settings: {
+                      slidesToShow: 2,
+                      slidesToScroll: 1,
+                    },
+                  },
+                  {
+                    breakpoint: 640,
+                    settings: {
+                      slidesToShow: 1,
+                      slidesToScroll: 1,
+                    },
+                  },
+                ],
+              }}
+            >
+              {news.map((item) => (
+                <div key={item.id} className="px-3">
+                  <motion.div
+                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="relative h-48">
+                      <img
+                        src={item.imageUrl || DEFAULT_NEWS_IMAGE}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = DEFAULT_NEWS_IMAGE;
+                        }}
+                      />
                     </div>
-                    <button
-                      onClick={() => setSelectedNews(item)}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      Read More
-                    </button>
-                  </div>
+                    <div className="p-6 flex flex-col flex-grow">
+                      <h3 className="text-xl font-semibold mb-2 break-words">
+                        {item.title}
+                      </h3>
+                      <p className="text-gray-600 mb-4 line-clamp-3 break-words flex-grow">
+                        {item.content}
+                      </p>
+                      <div className="flex justify-between items-center mt-auto">
+                        <div className="text-sm text-gray-500">
+                          {new Date(
+                            item.publishDate.seconds * 1000
+                          ).toLocaleDateString()}
+                        </div>
+                        <button
+                          onClick={() => setSelectedNews(item)}
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Read More
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
                 </div>
-              </motion.div>
-            ))}
+              ))}
+            </Slider>
           </div>
         </section>
       </div>
