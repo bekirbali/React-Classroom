@@ -15,6 +15,7 @@ import Login from "./pages/admin/Login";
 import Register from "./pages/admin/Register";
 import Dashboard from "./pages/admin/Dashboard";
 import ContentForm from "./components/admin/ContentForm";
+import FileManagement from "./pages/FileManagement";
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -44,6 +45,16 @@ const App = () => {
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+
+              {/* Files Management Route */}
+              <Route
+                path="/files"
+                element={
+                  <ProtectedRoute>
+                    <FileManagement />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected Admin Routes */}
               <Route
