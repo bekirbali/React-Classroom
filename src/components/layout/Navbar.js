@@ -36,6 +36,14 @@ const Navbar = () => {
               >
                 Contact
               </Link>
+              {user && (
+                <Link
+                  to="/files"
+                  className="px-3 py-2 rounded-md hover:bg-blue-700"
+                >
+                  Files
+                </Link>
+              )}
             </div>
           </div>
           <div className="flex items-center">
