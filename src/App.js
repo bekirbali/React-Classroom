@@ -45,6 +45,7 @@ const App = () => {
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/user" element={<Home />} />
 
               {/* Files Management Route */}
               <Route
@@ -94,6 +95,22 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <ContentFormWrapper type="announcements" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/adminannouncements/create"
+                element={
+                  <ProtectedRoute>
+                    <ContentForm type="adminannouncements" />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/adminannouncements/edit/:id"
+                element={
+                  <ProtectedRoute>
+                    <ContentFormWrapper type="adminannouncements" />
                   </ProtectedRoute>
                 }
               />
