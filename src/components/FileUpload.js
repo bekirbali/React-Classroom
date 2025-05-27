@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "../config/firebase";
 
+// firebase paid plan include
+
 const FileUpload = ({
   onFileUpload,
   folder = "uploads",

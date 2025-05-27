@@ -1,8 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const location = useLocation();
 
   const handleLogout = async () => {
     try {
@@ -63,12 +64,14 @@ const Navbar = () => {
                 </button>
               </>
             ) : (
-              <Link
-                to="/login"
-                className="px-3 py-2 rounded-md hover:bg-blue-700"
-              >
-                Admin Login
-              </Link>
+              location.pathname === "/user" && (
+                <Link
+                  to="/login"
+                  className="px-3 py-2 rounded-md hover:bg-blue-700"
+                >
+                  Admin Login
+                </Link>
+              )
             )}
           </div>
         </div>

@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 const Dashboard = () => {
   const [news, setNews] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
+  const [adminAnnouncements, setAdminAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("news");
 
@@ -45,8 +46,22 @@ const Dashboard = () => {
         ...doc.data(),
       }));
 
+      // Fetch admin announcements
+      const adminAnnouncementsQuery = query(
+        collection(db, "adminAnnouncements"),
+        orderBy("publishDate", "desc")
+      );
+      const adminAnnouncementsSnapshot = await getDocs(adminAnnouncementsQuery);
+      const adminAnnouncementsData = adminAnnouncementsSnapshot.docs.map(
+        (doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })
+      );
+
       setNews(newsData);
       setAnnouncements(announcementsData);
+      setAdminAnnouncements(adminAnnouncementsData);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching content:", error);
@@ -57,7 +72,15 @@ const Dashboard = () => {
   const handleDelete = async (id, type) => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       try {
-        await deleteDoc(doc(db, type, id));
+        let collectionName = type;
+        if (type === "adminAnnouncements") {
+          collectionName = "adminAnnouncements";
+        } else if (type === "announcements") {
+          collectionName = "announcements";
+        } else {
+          collectionName = "news";
+        }
+        await deleteDoc(doc(db, collectionName, id));
         fetchContent();
       } catch (error) {
         console.error("Error deleting item:", error);
@@ -93,7 +116,13 @@ const Dashboard = () => {
               to="/admin/announcements/create"
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
             >
-              Add Announcement
+              Add Public Announcement
+            </Link>
+            <Link
+              to="/admin/adminannouncements/create"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700"
+            >
+              Add Admin Announcement
             </Link>
           </div>
         </div>
@@ -106,7 +135,7 @@ const Dashboard = () => {
                   activeTab === "news"
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                } w-1/2 py-4 px-1 text-center border-b-2 font-medium`}
+                } w-1/3 py-4 px-1 text-center border-b-2 font-medium`}
                 onClick={() => setActiveTab("news")}
               >
                 News
@@ -116,10 +145,20 @@ const Dashboard = () => {
                   activeTab === "announcements"
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                } w-1/2 py-4 px-1 text-center border-b-2 font-medium`}
+                } w-1/3 py-4 px-1 text-center border-b-2 font-medium`}
                 onClick={() => setActiveTab("announcements")}
               >
-                Announcements
+                Public Announcements
+              </button>
+              <button
+                className={`${
+                  activeTab === "adminAnnouncements"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                } w-1/3 py-4 px-1 text-center border-b-2 font-medium`}
+                onClick={() => setActiveTab("adminAnnouncements")}
+              >
+                Admin Announcements
               </button>
             </nav>
           </div>
@@ -127,7 +166,12 @@ const Dashboard = () => {
 
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <ul className="divide-y divide-gray-200">
-            {(activeTab === "news" ? news : announcements).map((item) => (
+            {(activeTab === "news"
+              ? news
+              : activeTab === "announcements"
+              ? announcements
+              : adminAnnouncements
+            ).map((item) => (
               <motion.li
                 key={item.id}
                 initial={{ opacity: 0 }}
@@ -151,7 +195,13 @@ const Dashboard = () => {
                   </div>
                   <div className="ml-4 flex-shrink-0 flex space-x-2">
                     <Link
-                      to={`/admin/${activeTab}/edit/${item.id}`}
+                      to={`/admin/${
+                        activeTab === "announcements"
+                          ? "announcements"
+                          : activeTab === "adminAnnouncements"
+                          ? "adminannouncements"
+                          : activeTab
+                      }/edit/${item.id}`}
                       className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
                     >
                       Edit

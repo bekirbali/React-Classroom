@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../context/AuthContext";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -81,6 +82,7 @@ const SLIDER_IMAGES = [
 const Home = () => {
   const [news, setNews] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
+  const [privateAnnouncements, setPrivateAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNews, setSelectedNews] = useState(null);
   const [countdown, setCountdown] = useState({
@@ -89,6 +91,9 @@ const Home = () => {
     minutes: 0,
     seconds: 0,
   });
+
+  const { user } = useAuth();
+  // console.log("[Home.js] User from useAuth:", user); // Keeping this one, but commented for now to reduce noise unless specifically needed
 
   // Countdown Effect
   useEffect(() => {
@@ -132,6 +137,7 @@ const Home = () => {
 
   useEffect(() => {
     const fetchContent = async () => {
+      // console.log("[Home.js] fetchContent triggered. User:", user); // Keep, but commented for now
       try {
         // Fetch news
         const newsQuery = query(
@@ -157,6 +163,28 @@ const Home = () => {
           ...doc.data(),
         }));
 
+        // Fetch private announcements if a user is logged in
+        if (user) {
+          // console.log("[Home.js] User is logged in. Fetching private announcements."); // Keep, but commented for now
+          const privateAnnouncementsQuery = query(
+            collection(db, "adminAnnouncements"),
+            orderBy("publishDate", "desc")
+          );
+          const privateAnnouncementsSnapshot = await getDocs(
+            privateAnnouncementsQuery
+          );
+          const privateAnnouncementsData =
+            privateAnnouncementsSnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+          setPrivateAnnouncements(privateAnnouncementsData);
+          // console.log("[Home.js] Private announcements for logged-in user fetched:", privateAnnouncementsData); // Keep, but commented for now
+        } else {
+          // console.log("[Home.js] User is NOT logged in or user object is not as expected.", user); // Keep, but commented for now
+          setPrivateAnnouncements([]);
+        }
+
         setNews(newsData);
         setAnnouncements(announcementsData);
         setLoading(false);
@@ -167,7 +195,25 @@ const Home = () => {
     };
 
     fetchContent();
-  }, []);
+  }, [user]);
+
+  // New useEffect for logging display-critical states less frequently
+  useEffect(() => {
+    if (!loading) {
+      // Only log after initial loading is done
+      console.log("---------------------------------------------------------");
+      console.log("[Home.js] Display State Check (after loading/data change):");
+      console.log("  User Object:", user);
+      console.log("  Is Admin?:", user && user.isAdmin === true);
+      console.log(
+        "  Private Announcements Count:",
+        privateAnnouncements.length
+      );
+      console.log("  Private Announcements Data:", privateAnnouncements);
+      console.log("  Public Announcements Count:", announcements.length);
+      console.log("---------------------------------------------------------");
+    }
+  }, [loading, user, privateAnnouncements, announcements]); // Re-run if these change
 
   if (loading) {
     return (
@@ -294,42 +340,51 @@ const Home = () => {
       </motion.section>
 
       <div className="px-4 py-8">
-        {/* Announcements Section */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-4">
-            Important Announcements
-          </h2>
-          <div className="grid gap-6">
-            {announcements.map((announcement) => (
-              <motion.div
-                key={announcement.id}
-                className={`p-6 rounded-lg shadow-md ${
-                  announcement.importance === "High"
-                    ? "bg-red-50 border-l-4 border-red-500"
-                    : announcement.importance === "Medium"
-                    ? "bg-yellow-50 border-l-4 border-yellow-500"
-                    : "bg-blue-50 border-l-4 border-blue-500"
-                }`}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <h3 className="text-xl font-semibold mb-2">
-                  {announcement.title}
-                </h3>
-                <p className="text-gray-600">{announcement.content}</p>
-                <div className="mt-4 text-sm text-gray-500">
-                  Published:{" "}
-                  {new Date(
-                    announcement.publishDate.seconds * 1000
-                  ).toLocaleDateString()}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
+        {/* Important Announcements Section (Public - visible to all) - MOVED TO TOP */}
+        {announcements.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mb-12 py-8 px-4"
+          >
+            <div className="text-left">
+              <h2 className="text-2xl font-bold text-gray-800 mb-8">
+                Important Announcements
+              </h2>
+              <div className="grid gap-6">
+                {announcements.map((announcement) => (
+                  <motion.div
+                    key={announcement.id}
+                    className={`p-6 rounded-lg shadow-md text-left ${
+                      announcement.importance === "High"
+                        ? "bg-red-50 border-l-4 border-red-500"
+                        : announcement.importance === "Medium"
+                        ? "bg-yellow-50 border-l-4 border-yellow-500"
+                        : "bg-blue-50 border-l-4 border-blue-500"
+                    }`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <h3 className="text-xl font-semibold mb-2 text-gray-800">
+                      {announcement.title}
+                    </h3>
+                    <p className="text-gray-600">{announcement.content}</p>
+                    <div className="mt-4 text-sm text-gray-500">
+                      Published:{" "}
+                      {new Date(
+                        announcement.publishDate.seconds * 1000
+                      ).toLocaleDateString()}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.section>
+        )}
 
-        {/* News Section */}
+        {/* News Section - Should appear second */}
         <section className="mb-16">
           <h2 className="text-2xl font-semibold mb-4">Latest News</h2>
           <div className="relative px-8">
@@ -407,6 +462,50 @@ const Home = () => {
             </Slider>
           </div>
         </section>
+
+        {/* Member Announcements Section (Visible only to logged-in users) - MOVED TO BOTTOM */}
+        {user && privateAnnouncements.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }} // Adjusted delay
+            className="mb-12 py-8 px-4" // Removed bg-sky-50
+          >
+            <div className="text-left">
+              <h2 className="text-2xl font-bold text-gray-800 mb-8">
+                Member Announcements
+              </h2>
+              <div className="grid gap-6">
+                {privateAnnouncements.map((announcement) => (
+                  <motion.div
+                    key={announcement.id}
+                    className={`p-6 rounded-lg shadow-md text-left ${
+                      announcement.importance === "High"
+                        ? "bg-red-50 border-l-4 border-red-500"
+                        : announcement.importance === "Medium"
+                        ? "bg-yellow-50 border-l-4 border-yellow-500"
+                        : "bg-blue-50 border-l-4 border-blue-500"
+                    }`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <h3 className="text-xl font-semibold mb-2 text-gray-900">
+                      {announcement.title}
+                    </h3>
+                    <p className="text-gray-700">{announcement.content}</p>
+                    <div className="mt-4 text-sm text-gray-500">
+                      Published:{" "}
+                      {new Date(
+                        announcement.publishDate.seconds * 1000
+                      ).toLocaleDateString()}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.section>
+        )}
       </div>
 
       {/* News Modal */}
