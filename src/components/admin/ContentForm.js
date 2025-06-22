@@ -34,7 +34,16 @@ const ContentForm = ({ type, id = null }) => {
 
   const fetchContent = async () => {
     try {
-      const collectionName = type;
+      // Map the type to the correct collection name
+      let collectionName;
+      if (type === "news") {
+        collectionName = "news";
+      } else if (type === "adminannouncements") {
+        collectionName = "adminAnnouncements";
+      } else {
+        collectionName = "announcements";
+      }
+
       const docRef = doc(db, collectionName, id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
@@ -80,16 +89,7 @@ const ContentForm = ({ type, id = null }) => {
         updatedAt: new Date(),
       };
 
-      let targetCollection;
-      if (type === "news") {
-        targetCollection = "news";
-      } else {
-        targetCollection =
-          formData.announcementType === "Admin"
-            ? "adminAnnouncements"
-            : "announcements";
-      }
-
+      // Clean up data based on type
       if (type === "news") {
         delete contentData.announcementType;
         delete contentData.importance;
@@ -99,10 +99,29 @@ const ContentForm = ({ type, id = null }) => {
       }
 
       if (id) {
-        const originalCollection = type;
+        // Map the type to the correct collection name for updates
+        let originalCollection;
+        if (type === "news") {
+          originalCollection = "news";
+        } else if (type === "adminannouncements") {
+          originalCollection = "adminAnnouncements";
+        } else {
+          originalCollection = "announcements";
+        }
+
         const docRef = doc(db, originalCollection, id);
         await updateDoc(docRef, contentData);
       } else {
+        let targetCollection;
+        if (type === "news") {
+          targetCollection = "news";
+        } else {
+          targetCollection =
+            formData.announcementType === "Admin"
+              ? "adminAnnouncements"
+              : "announcements";
+        }
+
         await addDoc(collection(db, targetCollection), {
           ...contentData,
           createdAt: new Date(),
@@ -204,6 +223,28 @@ const ContentForm = ({ type, id = null }) => {
               >
                 <option value="Public">Public</option>
                 <option value="Admin">Admin (Visible to Admins Only)</option>
+              </select>
+            </div>
+          )}
+
+          {(type === "announcements" || type === "adminannouncements") && (
+            <div>
+              <label
+                htmlFor="importance"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Importance Level
+              </label>
+              <select
+                id="importance"
+                name="importance"
+                value={formData.importance}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
               </select>
             </div>
           )}
