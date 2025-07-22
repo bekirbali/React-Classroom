@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { linkifyComprehensive } from "../utils/linkify";
 
 // Custom styles for slider
 const sliderStyles = `
@@ -448,7 +449,9 @@ const Home = () => {
                     <h3 className="text-xl font-semibold mb-2 text-gray-800">
                       {announcement.title}
                     </h3>
-                    <p className="text-gray-600">{announcement.content}</p>
+                    <p className="text-gray-600">
+                      {linkifyComprehensive(announcement.content)}
+                    </p>
                     <div className="mt-4 text-sm text-gray-500">
                       Published:{" "}
                       {new Date(
@@ -518,7 +521,7 @@ const Home = () => {
                         {item.title}
                       </h3>
                       <p className="text-gray-600 mb-4 line-clamp-3 break-words flex-grow">
-                        {item.content}
+                        {linkifyComprehensive(item.content)}
                       </p>
                       <div className="flex justify-between items-center mt-auto">
                         <div className="text-sm text-gray-500">
@@ -542,7 +545,7 @@ const Home = () => {
         </section>
 
         {/* Member Announcements Section (Visible only to logged-in users) - MOVED TO BOTTOM */}
-        {user && privateAnnouncements.length > 0 && (
+        {/* {user && privateAnnouncements.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -571,7 +574,9 @@ const Home = () => {
                     <h3 className="text-xl font-semibold mb-2 text-gray-900">
                       {announcement.title}
                     </h3>
-                    <p className="text-gray-700">{announcement.content}</p>
+                    <p className="text-gray-700">
+                      {linkifyComprehensive(announcement.content)}
+                    </p>
                     <div className="mt-4 text-sm text-gray-500">
                       Published:{" "}
                       {new Date(
@@ -583,7 +588,7 @@ const Home = () => {
               </div>
             </div>
           </motion.section>
-        )}
+        )} */}
       </div>
 
       {/* News Modal */}
@@ -634,7 +639,7 @@ const Home = () => {
                   {selectedNews.title}
                 </h2>
                 <p className="text-gray-600 whitespace-normal break-words">
-                  {selectedNews.content}
+                  {linkifyComprehensive(selectedNews.content)}
                 </p>
                 <div className="mt-4 text-sm text-gray-500">
                   Published:{" "}

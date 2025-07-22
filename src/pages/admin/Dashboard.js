@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { Link, useNavigate } from "react-router-dom";
+import { linkifyComprehensive } from "../../utils/linkify";
 
 const Dashboard = () => {
   const [news, setNews] = useState([]);
@@ -23,7 +24,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   // Admin panel şifresi - gerçek uygulamalarda environment variable kullanılmalı
-  const ADMIN_PASSWORD = "admin123";
+  const ADMIN_PASSWORD = "--";
 
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
@@ -267,7 +268,7 @@ const Dashboard = () => {
                       ).toLocaleDateString()}
                     </p>
                     <p className="mt-2 text-sm text-gray-600 line-clamp-2">
-                      {item.content}
+                      {linkifyComprehensive(item.content)}
                     </p>
                   </div>
                   <div className="ml-4 flex-shrink-0 flex space-x-2">

@@ -174,6 +174,11 @@ const ContentForm = ({ type, id = null }) => {
             >
               Content
             </label>
+            <div className="mt-1 mb-2 text-sm text-blue-600 bg-blue-50 p-2 rounded-md">
+              💡 <strong>İpucu:</strong> Yazınızda URL'ler (https://example.com,
+              www.example.com) ve email adresleri otomatik olarak tıklanılabilir
+              linkler haline getirilecektir.
+            </div>
             <textarea
               id="content"
               name="content"
@@ -182,6 +187,7 @@ const ContentForm = ({ type, id = null }) => {
               onChange={handleChange}
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="İçeriğinizi buraya yazın... URL'ler ve email adresleri otomatik olarak linkleştirilecek."
             ></textarea>
           </div>
 
