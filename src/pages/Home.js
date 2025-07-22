@@ -70,7 +70,7 @@ const SLIDER_IMAGES = [
     title: "Welcome to Our Modern Learning Environment",
   },
   {
-    url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+    url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     title: "Discover Your Potential",
   },
   {
@@ -85,24 +85,33 @@ const Home = () => {
   const [privateAnnouncements, setPrivateAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNews, setSelectedNews] = useState(null);
-  const [countdown, setCountdown] = useState({
+  const [timer, setTimer] = useState({
     days: 0,
     hours: 0,
     minutes: 0,
     seconds: 0,
   });
+  const [isRunning, setIsRunning] = useState(false);
+  const [startTime, setStartTime] = useState(null);
 
   const { user } = useAuth();
   // console.log("[Home.js] User from useAuth:", user); // Keeping this one, but commented for now to reduce noise unless specifically needed
 
-  // Countdown Effect
+  // Load timer state from localStorage on component mount
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      const targetDate = new Date("2025-06-15T09:30:00+03:00").getTime();
-      const now = new Date().getTime();
-      const difference = targetDate - now;
+    const savedTimerState = localStorage.getItem("timerState");
+    if (savedTimerState) {
+      const { isRunning: savedIsRunning, startTime: savedStartTime } =
+        JSON.parse(savedTimerState);
 
-      if (difference > 0) {
+      if (savedIsRunning && savedStartTime) {
+        setIsRunning(true);
+        setStartTime(savedStartTime);
+
+        // Calculate elapsed time since the timer was saved
+        const now = new Date().getTime();
+        const difference = now - savedStartTime;
+
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
         const hours = Math.floor(
           (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
@@ -112,17 +121,68 @@ const Home = () => {
         );
         const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-        setCountdown({ days, hours, minutes, seconds });
-      } else {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setTimer({ days, hours, minutes, seconds });
+      }
+    }
+  }, []);
+
+  // Save timer state to localStorage only when user starts/stops timer
+  // NOT every second when timer updates (that would be inefficient)
+  useEffect(() => {
+    const timerState = {
+      isRunning,
+      startTime,
+    };
+    localStorage.setItem("timerState", JSON.stringify(timerState));
+  }, [isRunning, startTime]); // Only triggers on start/stop, not every second
+
+  // Timer Effect
+  useEffect(() => {
+    let interval = null;
+
+    if (isRunning && startTime) {
+      interval = setInterval(() => {
+        const now = new Date().getTime();
+        const difference = now - startTime;
+
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
+        const minutes = Math.floor(
+          (difference % (1000 * 60 * 60)) / (1000 * 60)
+        );
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+        setTimer({ days, hours, minutes, seconds });
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
       }
     };
+  }, [isRunning, startTime]);
 
-    calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
+  const handleStartStop = () => {
+    if (isRunning) {
+      // Durdur
+      setIsRunning(false);
+    } else {
+      // Başlat
+      setStartTime(new Date().getTime());
+      setIsRunning(true);
+    }
+  };
 
-    return () => clearInterval(timer);
-  }, []);
+  const handleReset = () => {
+    setIsRunning(false);
+    setStartTime(null);
+    setTimer({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    // Clear localStorage when resetting
+    localStorage.removeItem("timerState");
+  };
 
   const sliderSettings = {
     dots: true,
@@ -253,7 +313,7 @@ const Home = () => {
         </div>
       </motion.div>
 
-      {/* Countdown Section */}
+      {/* Timer Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -261,34 +321,52 @@ const Home = () => {
         className="py-12 px-4 bg-gradient-to-r from-blue-500 to-purple-600"
       >
         <div className="max-w-4xl mx-auto text-center text-white">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            LGS' ye Kalan Süre
-          </h2>
-          <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">Kronometre</h2>
+          <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
             <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-              <div className="text-4xl font-bold" key={countdown.days}>
-                {String(countdown.days).padStart(2, "0")}
+              <div className="text-4xl font-bold" key={timer.days}>
+                {String(timer.days).padStart(2, "0")}
               </div>
               <div className="text-sm mt-1">Gün</div>
             </div>
             <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-              <div className="text-4xl font-bold" key={countdown.hours}>
-                {String(countdown.hours).padStart(2, "0")}
+              <div className="text-4xl font-bold" key={timer.hours}>
+                {String(timer.hours).padStart(2, "0")}
               </div>
               <div className="text-sm mt-1">Saat</div>
             </div>
             <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-              <div className="text-4xl font-bold" key={countdown.minutes}>
-                {String(countdown.minutes).padStart(2, "0")}
+              <div className="text-4xl font-bold" key={timer.minutes}>
+                {String(timer.minutes).padStart(2, "0")}
               </div>
               <div className="text-sm mt-1">Dakika</div>
             </div>
             <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-              <div className="text-4xl font-bold" key={countdown.seconds}>
-                {String(countdown.seconds).padStart(2, "0")}
+              <div className="text-4xl font-bold" key={timer.seconds}>
+                {String(timer.seconds).padStart(2, "0")}
               </div>
               <div className="text-sm mt-1">Saniye</div>
             </div>
+          </div>
+
+          {/* Timer Controls */}
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={handleStartStop}
+              className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors duration-300 ${
+                isRunning
+                  ? "bg-red-500 hover:bg-red-600 text-white"
+                  : "bg-green-500 hover:bg-green-600 text-white"
+              }`}
+            >
+              {isRunning ? "Durdur" : "Başlat"}
+            </button>
+            <button
+              onClick={handleReset}
+              className="px-8 py-3 rounded-lg font-semibold text-lg bg-white/20 hover:bg-white/30 text-white transition-colors duration-300 backdrop-blur-sm"
+            >
+              Sıfırla
+            </button>
           </div>
         </div>
       </motion.section>
