@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   collection,
   query,
@@ -7,6 +7,8 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  getDoc,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { Link, useNavigate } from "react-router-dom";
@@ -18,10 +20,16 @@ const Dashboard = () => {
   const [adminAnnouncements, setAdminAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("news");
-  const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+  const [isPasswordVerified, setIsPasswordVerified] = useState(() => {
+    return sessionStorage.getItem("isAdminVerified") === "true";
+  });
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const navigate = useNavigate();
+
+  const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
+  const [targetDateInput, setTargetDateInput] = useState("");
+  const [isActiveCountdown, setIsActiveCountdown] = useState(true);
 
   // Admin panel şifresi - gerçek uygulamalarda environment variable kullanılmalı
   const ADMIN_PASSWORD = "--";
@@ -30,6 +38,7 @@ const Dashboard = () => {
     e.preventDefault();
     if (passwordInput === ADMIN_PASSWORD) {
       setIsPasswordVerified(true);
+      sessionStorage.setItem("isAdminVerified", "true");
       setPasswordError("");
     } else {
       setPasswordError("Yanlış şifre! Ana sayfaya yönlendiriliyorsunuz...");
@@ -42,6 +51,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (isPasswordVerified) {
       fetchContent();
+      fetchCountdown();
     }
   }, [isPasswordVerified]);
 
@@ -89,6 +99,56 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error fetching content:", error);
       setLoading(false);
+    }
+  };
+
+  const fetchCountdown = async () => {
+    try {
+      const docRef = doc(db, "settings", "countdown");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setTargetDateInput(data.targetDate || "");
+        setIsActiveCountdown(data.isActive !== false);
+      }
+    } catch (error) {
+      console.error("Error fetching countdown settings:", error);
+    }
+  };
+
+  const handleSaveCountdown = async (e) => {
+    e.preventDefault();
+    try {
+      const docRef = doc(db, "settings", "countdown");
+      await setDoc(docRef, {
+        targetDate: targetDateInput,
+        isActive: isActiveCountdown,
+        updatedAt: new Date(),
+      });
+      alert("Geri sayım süresi başarıyla güncellendi!");
+      setIsTimeModalOpen(false);
+    } catch (error) {
+      console.error("Error saving countdown:", error);
+      alert("Geri sayım süresi güncellenirken bir hata oluştu.");
+    }
+  };
+
+  const handleClearCountdown = async () => {
+    if (window.confirm("Geri sayımı temizlemek istediğinize emin misiniz?")) {
+      try {
+        const docRef = doc(db, "settings", "countdown");
+        await setDoc(docRef, {
+          targetDate: "",
+          isActive: false,
+          updatedAt: new Date(),
+        });
+        setTargetDateInput("");
+        setIsActiveCountdown(false);
+        alert("Geri sayım başarıyla temizlendi!");
+        setIsTimeModalOpen(false);
+      } catch (error) {
+        console.error("Error clearing countdown:", error);
+      }
     }
   };
 
@@ -140,6 +200,7 @@ const Dashboard = () => {
                   type="password"
                   autoComplete="current-password"
                   required
+                  autoFocus
                   className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder="Admin şifresi"
                   value={passwordInput}
@@ -202,6 +263,12 @@ const Dashboard = () => {
             >
               Add Admin Announcement
             </Link>
+            <button
+              onClick={() => setIsTimeModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 cursor-pointer"
+            >
+              Add Time
+            </button>
           </div>
         </div>
 
@@ -297,6 +364,73 @@ const Dashboard = () => {
           </ul>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {isTimeModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl relative"
+            >
+              <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                Geri Sayım Süresi Ayarla
+              </h2>
+              <form onSubmit={handleSaveCountdown} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Hedef Tarih ve Saat
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={targetDateInput}
+                    onChange={(e) => setTargetDateInput(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    required
+                  />
+                </div>
+                <div className="flex items-center">
+                  <input
+                    id="is-active"
+                    type="checkbox"
+                    checked={isActiveCountdown}
+                    onChange={(e) => setIsActiveCountdown(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="is-active" className="ml-2 block text-sm text-gray-900 select-none">
+                    Geri Sayım Aktif
+                  </label>
+                </div>
+                <div className="flex justify-end space-x-2 pt-4">
+                  {targetDateInput && (
+                    <button
+                      type="button"
+                      onClick={handleClearCountdown}
+                      className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 cursor-pointer"
+                    >
+                      Temizle
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsTimeModalOpen(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                  >
+                    Kaydet
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
