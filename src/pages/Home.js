@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import { collection, query, where, orderBy, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
@@ -92,71 +92,70 @@ const Home = () => {
     minutes: 0,
     seconds: 0,
   });
-  const [isRunning, setIsRunning] = useState(false);
-  const [startTime, setStartTime] = useState(null);
+  const [targetDate, setTargetDate] = useState("");
+  const [isActive, setIsActive] = useState(false);
 
   const { user } = useAuth();
   // console.log("[Home.js] User from useAuth:", user); // Keeping this one, but commented for now to reduce noise unless specifically needed
 
-  // Load timer state from localStorage on component mount
-  useEffect(() => {
-    const savedTimerState = localStorage.getItem("timerState");
-    if (savedTimerState) {
-      const { isRunning: savedIsRunning, startTime: savedStartTime } =
-        JSON.parse(savedTimerState);
+  const calculateTimeRemaining = (target) => {
+    const now = new Date().getTime();
+    const difference = new Date(target).getTime() - now;
 
-      if (savedIsRunning && savedStartTime) {
-        setIsRunning(true);
-        setStartTime(savedStartTime);
-
-        // Calculate elapsed time since the timer was saved
-        const now = new Date().getTime();
-        const difference = now - savedStartTime;
-
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor(
-          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-        );
-        const minutes = Math.floor(
-          (difference % (1000 * 60 * 60)) / (1000 * 60)
-        );
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-        setTimer({ days, hours, minutes, seconds });
-      }
+    if (difference <= 0) {
+      return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
     }
-  }, []);
 
-  // Save timer state to localStorage only when user starts/stops timer
-  // NOT every second when timer updates (that would be inefficient)
-  useEffect(() => {
-    const timerState = {
-      isRunning,
-      startTime,
-    };
-    localStorage.setItem("timerState", JSON.stringify(timerState));
-  }, [isRunning, startTime]); // Only triggers on start/stop, not every second
+    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+    const minutes = Math.floor(
+      (difference % (1000 * 60 * 60)) / (1000 * 60)
+    );
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-  // Timer Effect
+    return { days, hours, minutes, seconds, isExpired: false };
+  };
+
+  // Countdown Effect
   useEffect(() => {
     let interval = null;
 
-    if (isRunning && startTime) {
+    if (isActive && targetDate) {
+      // Run once immediately to avoid 1-second delay
+      const remaining = calculateTimeRemaining(targetDate);
+      if (remaining.isExpired) {
+        setIsActive(false);
+        setTimer({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      } else {
+        setTimer({
+          days: remaining.days,
+          hours: remaining.hours,
+          minutes: remaining.minutes,
+          seconds: remaining.seconds,
+        });
+      }
+
       interval = setInterval(() => {
-        const now = new Date().getTime();
-        const difference = now - startTime;
-
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor(
-          (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-        );
-        const minutes = Math.floor(
-          (difference % (1000 * 60 * 60)) / (1000 * 60)
-        );
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-        setTimer({ days, hours, minutes, seconds });
+        const remaining = calculateTimeRemaining(targetDate);
+        if (remaining.isExpired) {
+          setIsActive(false);
+          setTimer({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+          if (interval) {
+            clearInterval(interval);
+          }
+        } else {
+          setTimer({
+            days: remaining.days,
+            hours: remaining.hours,
+            minutes: remaining.minutes,
+            seconds: remaining.seconds,
+          });
+        }
       }, 1000);
+    } else {
+      setTimer({ days: 0, hours: 0, minutes: 0, seconds: 0 });
     }
 
     return () => {
@@ -164,26 +163,7 @@ const Home = () => {
         clearInterval(interval);
       }
     };
-  }, [isRunning, startTime]);
-
-  const handleStartStop = () => {
-    if (isRunning) {
-      // Durdur
-      setIsRunning(false);
-    } else {
-      // Başlat
-      setStartTime(new Date().getTime());
-      setIsRunning(true);
-    }
-  };
-
-  const handleReset = () => {
-    setIsRunning(false);
-    setStartTime(null);
-    setTimer({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-    // Clear localStorage when resetting
-    localStorage.removeItem("timerState");
-  };
+  }, [isActive, targetDate]);
 
   const sliderSettings = {
     dots: true,
@@ -200,6 +180,23 @@ const Home = () => {
     const fetchContent = async () => {
       // console.log("[Home.js] fetchContent triggered. User:", user); // Keep, but commented for now
       try {
+        // Fetch countdown settings
+        const countdownRef = doc(db, "settings", "countdown");
+        const countdownSnap = await getDoc(countdownRef);
+        if (countdownSnap.exists()) {
+          const data = countdownSnap.data();
+          if (data.targetDate && data.isActive !== false) {
+            setTargetDate(data.targetDate);
+            setIsActive(true);
+          } else {
+            setTargetDate("");
+            setIsActive(false);
+          }
+        } else {
+          setTargetDate("");
+          setIsActive(false);
+        }
+
         // Fetch news
         const newsQuery = query(
           collection(db, "news"),
@@ -322,8 +319,9 @@ const Home = () => {
         className="py-12 px-4 bg-gradient-to-r from-blue-500 to-purple-600"
       >
         <div className="max-w-4xl mx-auto text-center text-white">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Kronometre</h2>
-          <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">Kalan Zaman</h2>
+
+          <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto">
             <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
               <div className="text-4xl font-bold" key={timer.days}>
                 {String(timer.days).padStart(2, "0")}
@@ -348,26 +346,6 @@ const Home = () => {
               </div>
               <div className="text-sm mt-1">Saniye</div>
             </div>
-          </div>
-
-          {/* Timer Controls */}
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={handleStartStop}
-              className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors duration-300 ${
-                isRunning
-                  ? "bg-red-500 hover:bg-red-600 text-white"
-                  : "bg-green-500 hover:bg-green-600 text-white"
-              }`}
-            >
-              {isRunning ? "Durdur" : "Başlat"}
-            </button>
-            <button
-              onClick={handleReset}
-              className="px-8 py-3 rounded-lg font-semibold text-lg bg-white/20 hover:bg-white/30 text-white transition-colors duration-300 backdrop-blur-sm"
-            >
-              Sıfırla
-            </button>
           </div>
         </div>
       </motion.section>
